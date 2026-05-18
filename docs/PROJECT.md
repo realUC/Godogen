@@ -1,6 +1,6 @@
 # Godogen — From Prompt to Playable Game
 
-Godogen is an autonomous development pipeline for turning a natural-language game brief into a playable Godot or Bevy project. It plans the game, generates visual direction and assets, writes code, and captures media from the running engine for visual review.
+Godogen is an autonomous development pipeline for turning a natural-language game brief into a playable Godot, Bevy, or Babylon.js project. It plans the game, generates visual direction and assets, writes code, and captures media from the running engine for visual review.
 
 It is not a game engine, a code generator, or an asset marketplace. It is a source repo for runtime skills that are published into a fresh game repo and then executed by Claude Code or Codex.
 
@@ -11,6 +11,7 @@ The repo is organized by engine:
 - `shared/` — engine-agnostic `godogen` stages, the shared `Stop` hook, and common published-repo instructions
 - `godot/` — Godot-specific `godogen` stages and `godot-api`
 - `bevy/` — Bevy-specific `godogen` stages and `bevy-help`
+- `babylon/` — Babylon.js-specific `godogen` stages, Vite scaffold, browser capture, and `babylon-help`
 
 Claude Code vs Codex is selected at render time:
 
@@ -19,6 +20,8 @@ Claude Code vs Codex is selected at render time:
 ./publish.sh --engine godot --agent codex --out ~/game
 ./publish.sh --engine bevy --agent claude --out ~/game
 ./publish.sh --engine bevy --agent codex --out ~/game
+./publish.sh --engine babylon --agent claude --out ~/game
+./publish.sh --engine babylon --agent codex --out ~/game
 ```
 
 Publishing writes `CLAUDE.md` plus `.claude/skills/` for Claude Code, or `AGENTS.md` plus `.agents/skills/` for Codex. Codex `agents/openai.yaml` files are generated from each rendered `SKILL.md` frontmatter.
@@ -43,7 +46,9 @@ Godot output is a Godot 4 C#/.NET project. The Godot runtime skill uses scene bu
 
 Bevy output is a Rust/Bevy project. The Bevy runtime skill uses code-first scene construction, local Bevy rustdoc/examples through `bevy-help`, and a dedicated capture path for final proof bundles.
 
-Both engines share the same final-bundle contract: the latest numeric `screenshots/result/{N}/` folder containing `video.mp4` plus its raw `frameXXX.png` sequence.
+Babylon.js output is a TypeScript/Vite browser project. The Babylon runtime skill uses a disposable Vite scaffold, scene-level hot reload, local npm package lookup through `babylon-help`, and Chrome/Chromium browser capture.
+
+Godot and Bevy final proof bundles include `video.mp4` plus raw frames. Babylon final proof bundles record browser video directly and include `video.webm` plus encoded `video.mp4`.
 
 ## What Makes This Different
 
@@ -53,8 +58,8 @@ Both engines share the same final-bundle contract: the latest numeric `screensho
 
 **Budget-aware asset generation.** Gemini, Grok, and Tripo3D are used where they make economic sense, and generated assets are assigned back into `PLAN.md` so implementation does not lose them.
 
-**Engine-specific expertise without agent duplication.** Godot and Bevy are different enough to keep their engine docs separate. Claude and Codex are similar enough to render from one source.
+**Engine-specific expertise without agent duplication.** Godot, Bevy, and Babylon.js are different enough to keep their engine docs separate. Claude and Codex are similar enough to render from one source.
 
 ## Runtime Limitations
 
-The current runtime does not ship audio. Godot supports debug APK export when requested; Bevy Android export is not implemented yet.
+The current runtime does not ship a dedicated audio pipeline. Godot supports debug APK export when requested; Bevy and Babylon mobile/native packaging are not implemented yet.

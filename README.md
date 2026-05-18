@@ -1,4 +1,4 @@
-# Godogen: Autonomous game development for Godot and Bevy with Claude Code and Codex
+# Godogen: Autonomous game development for Godot, Bevy, and Babylon.js with Claude Code and Codex
 
 [![Watch the video](https://img.youtube.com/vi/eUz19GROIpY/maxresdefault.jpg)](https://youtu.be/eUz19GROIpY)
 
@@ -15,6 +15,7 @@ The source is organized along the engine axis:
 - `shared/` — engine-agnostic `godogen` stages, asset-generation tooling, shared stop hook, and common game-repo instructions
 - `godot/` — Godot-specific `godogen` stages, Godot capture helpers, and the `godot-api` skill
 - `bevy/` — Bevy-specific `godogen` stages, Bevy capture helpers, and the `bevy-help` skill
+- `babylon/` — Babylon.js-specific `godogen` stages, Vite scaffold, browser capture helpers, and the `babylon-help` skill
 
 Claude Code vs Codex is a publish-time render choice, not a separate source tree. The root [publish.sh](publish.sh) renders the right runtime layout for the chosen engine and host agent.
 
@@ -23,6 +24,7 @@ Claude Code vs Codex is a publish-time render choice, not a separate source tree
 - **Godot 4 output** — real C#/.NET projects with proper scene trees, scene builders, scripts, and asset organization.
 - **Godot Android export** — debug APK export remains available when the user requests an Android app.
 - **Bevy output** — Rust/Bevy projects with code-first scenes, local Bevy docs lookup, deterministic capture guidance, and final proof bundles.
+- **Babylon.js output** — TypeScript/Vite browser games with first-class hot reload, Chrome/Chromium WebGL2 capture, and static web builds.
 - **Asset generation** — Gemini creates precise references and characters; xAI Grok handles textures and simple objects; Tripo3D converts images to 3D models. Animated sprites use Grok video generation with loop detection.
 - **C# / .NET 9 for Godot** — Godot output uses C#. See [why C# over GDScript](docs/gdscript-vs-csharp.md).
 - **Frame-grounded self-repair** — the agent is carefully prompted to judge progress from captured screenshots, not from code that compiles, so visible defects (clipping, wrong scale, frozen motion, missing assets) drive the next iteration instead of being rationalized away.
@@ -35,6 +37,8 @@ Claude Code vs Codex is a publish-time render choice, not a separate source tree
 
 - [Godot 4](https://godotengine.org/download/) (.NET build) on `PATH` for Godot projects
 - Rust/Cargo plus local Bevy docs for Bevy projects
+- Node.js 22.12+ and npm for Babylon.js projects
+- Chrome or Chromium with hardware WebGL2 for Babylon.js browser capture
 - Python 3 with pip
 - API keys as environment variables:
   - `GOOGLE_API_KEY` — [Google AI Studio](https://aistudio.google.com/) for Gemini image generation
@@ -53,6 +57,8 @@ Pick the engine and host agent:
 ./publish.sh --engine godot --agent codex  --out ~/my-game  # AGENTS.md + .agents/skills/
 ./publish.sh --engine bevy  --agent claude --out ~/my-game
 ./publish.sh --engine bevy  --agent codex  --out ~/my-game
+./publish.sh --engine babylon --agent claude --out ~/my-game
+./publish.sh --engine babylon --agent codex  --out ~/my-game
 ```
 
 Pass `--force` to wipe existing contents at the target before publishing — use this when re-publishing over a previous run.

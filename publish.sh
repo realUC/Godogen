@@ -2,8 +2,8 @@
 # Publish Godogen runtime files into a target game repo.
 #
 # Usage:
-#   ./publish.sh --engine godot|bevy --agent claude|codex --out <target_dir> [--force]
-#   ./publish.sh --engine godot|bevy --agent claude|codex <target_dir> [--force]
+#   ./publish.sh --engine godot|bevy|babylon --agent claude|codex --out <target_dir> [--force]
+#   ./publish.sh --engine godot|bevy|babylon --agent claude|codex <target_dir> [--force]
 #
 # The Stop hook is best-effort: when `tg-push` and TG_* env vars are present at runtime
 # it pushes the latest screenshots/result/{N}/video.mp4 to Telegram, otherwise it no-ops.
@@ -78,8 +78,8 @@ while [ $# -gt 0 ]; do
 done
 
 case "$ENGINE" in
-    godot|bevy) ;;
-    *) echo "error: --engine must be godot or bevy" >&2; usage; exit 1 ;;
+    godot|bevy|babylon) ;;
+    *) echo "error: --engine must be godot, bevy, or babylon" >&2; usage; exit 1 ;;
 esac
 
 case "$AGENT" in
@@ -91,6 +91,7 @@ case "$AGENT" in
         GODOGEN_COMMAND="/godogen"
         GODOT_API_COMMAND="/godot-api"
         BEVY_HELP_COMMAND="/bevy-help"
+        BABYLON_HELP_COMMAND="/babylon-help"
         ;;
     codex)
         MANIFEST="AGENTS.md"
@@ -100,6 +101,7 @@ case "$AGENT" in
         GODOGEN_COMMAND="\$godogen"
         GODOT_API_COMMAND="\$godot-api"
         BEVY_HELP_COMMAND="\$bevy-help"
+        BABYLON_HELP_COMMAND="\$babylon-help"
         ;;
     *) echo "error: --agent must be claude or codex" >&2; usage; exit 1 ;;
 esac
@@ -125,13 +127,20 @@ mkdir -p "$TMP/skills/godogen"
 rsync -a --delete --exclude='__pycache__/' "$REPO_ROOT/shared/skills/godogen/" "$TMP/skills/godogen/"
 rsync -a --exclude='__pycache__/' "$REPO_ROOT/$ENGINE/skills/godogen/" "$TMP/skills/godogen/"
 
-if [ "$ENGINE" = "godot" ]; then
-    rsync -a --delete --exclude='doc_source/' --exclude='__pycache__/' \
-        "$REPO_ROOT/godot/skills/godot-api" "$TMP/skills/"
-else
-    rsync -a --delete --exclude='docs/' --exclude='__pycache__/' \
-        "$REPO_ROOT/bevy/skills/bevy-help" "$TMP/skills/"
-fi
+case "$ENGINE" in
+    godot)
+        rsync -a --delete --exclude='doc_source/' --exclude='__pycache__/' \
+            "$REPO_ROOT/godot/skills/godot-api" "$TMP/skills/"
+        ;;
+    bevy)
+        rsync -a --delete --exclude='docs/' --exclude='__pycache__/' \
+            "$REPO_ROOT/bevy/skills/bevy-help" "$TMP/skills/"
+        ;;
+    babylon)
+        rsync -a --delete --exclude='__pycache__/' \
+            "$REPO_ROOT/babylon/skills/babylon-help" "$TMP/skills/"
+        ;;
+esac
 
 python3 "$HELPERS/render_dir.py" "$TMP" \
     "AGENT_ID=$AGENT" \
@@ -140,18 +149,22 @@ python3 "$HELPERS/render_dir.py" "$TMP" \
     "GODOGEN_SKILL_DIR=$SKILLS_DIR_REL/godogen" \
     "GODOT_API_SKILL_DIR=$SKILLS_DIR_REL/godot-api" \
     "BEVY_HELP_SKILL_DIR=$SKILLS_DIR_REL/bevy-help" \
+    "BABYLON_HELP_SKILL_DIR=$SKILLS_DIR_REL/babylon-help" \
     "HOOK_CONFIG_DIR=$HOOK_CONFIG_DIR" \
     "ENGINE_NAME=${ENGINE^}" \
     "GODOGEN_COMMAND=$GODOGEN_COMMAND" \
     "GODOT_API_COMMAND=$GODOT_API_COMMAND" \
-    "BEVY_HELP_COMMAND=$BEVY_HELP_COMMAND"
+    "BEVY_HELP_COMMAND=$BEVY_HELP_COMMAND" \
+    "BABYLON_HELP_COMMAND=$BABYLON_HELP_COMMAND"
 
 if [ "$AGENT" = "codex" ]; then
     python3 "$HELPERS/generate_codex_metadata.py" "$TMP/skills"
-elif [ "$ENGINE" = "godot" ]; then
-    python3 "$HELPERS/inject_claude_lookup_frontmatter.py" "$TMP/skills/godot-api/SKILL.md"
 else
-    python3 "$HELPERS/inject_claude_lookup_frontmatter.py" "$TMP/skills/bevy-help/SKILL.md"
+    case "$ENGINE" in
+        godot) python3 "$HELPERS/inject_claude_lookup_frontmatter.py" "$TMP/skills/godot-api/SKILL.md" ;;
+        bevy) python3 "$HELPERS/inject_claude_lookup_frontmatter.py" "$TMP/skills/bevy-help/SKILL.md" ;;
+        babylon) python3 "$HELPERS/inject_claude_lookup_frontmatter.py" "$TMP/skills/babylon-help/SKILL.md" ;;
+    esac
 fi
 
 echo "Publishing $ENGINE/$AGENT to: $TARGET"
@@ -162,6 +175,11 @@ rsync -a --delete "$TMP/skills/" "$TARGET/$SKILLS_DIR_REL/"
 if [ "$ENGINE" = "bevy" ]; then
     link_bevy_docs "$TARGET/$SKILLS_DIR_REL/bevy-help/docs"
     echo "Linked bevy-help docs from source repo"
+fi
+
+if [ "$ENGINE" = "babylon" ]; then
+    rsync -a "$REPO_ROOT/babylon/scaffold/" "$TARGET/"
+    echo "Created Babylon scaffold"
 fi
 
 mkdir -p "$TMP/game"
@@ -198,11 +216,17 @@ if [ ! -f "$TARGET/.gitignore" ]; then
         else
             printf '.agents\nAGENTS.md\n.codex\n'
         fi
-        if [ "$ENGINE" = "godot" ]; then
-            printf 'assets\nscreenshots\n.godot\n*.import\nbin/\nobj/\n'
-        else
-            printf '/target\n/screenshots\n.bevy-help.log\n'
-        fi
+        case "$ENGINE" in
+            godot)
+                printf 'assets\nscreenshots\n.godot\n*.import\nbin/\nobj/\n'
+                ;;
+            bevy)
+                printf '/target\n/screenshots\n.bevy-help.log\n'
+                ;;
+            babylon)
+                printf '/node_modules\n/dist\n/screenshots\n.capture\n.babylon-help.log\n'
+                ;;
+        esac
     } > "$TARGET/.gitignore"
     echo "Created .gitignore"
 fi

@@ -1,5 +1,12 @@
 # Changelog
 
+**2026-05-18 — Babylon.js support**
+- Added Babylon.js as a first-class engine alongside Godot and Bevy
+- Disposable TypeScript/Vite scaffold with scene-level hot reload through a custom Vite plugin (`godogen:scene-change`); engine and canvas persist across edits
+- Browser capture through Playwright + Chrome/Chromium; hardware WebGL2 preferred, software-renderer fallback warns prominently but still produces media
+- `babylon-help` skill uses installed npm package types as the primary local reference
+- `publish.sh` extended to `--engine babylon`
+
 **2026-04-26 — Bevy support**
 - Added Bevy as a first-class engine alongside Godot
 - Replaced the four Claude/Codex source trees with `shared/`, `godot/`, and `bevy/`

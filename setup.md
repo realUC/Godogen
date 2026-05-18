@@ -56,6 +56,24 @@ cargo --version
 rustc --version
 ```
 
+## Node.js And Browser
+
+Babylon.js projects require Node.js 22.12+ and npm:
+
+```bash
+node --version
+npm --version
+```
+
+Browser capture requires Chrome or Chromium with hardware WebGL2. Install one system browser and set `CHROME_BIN` if it is not on a common path:
+
+```bash
+command -v google-chrome || command -v chromium || command -v chromium-browser
+export CHROME_BIN=/path/to/chrome
+```
+
+The Babylon capture script prefers hardware WebGL2. It logs a prominent warning when the browser falls back to a software renderer (SwiftShader, llvmpipe, lavapipe, etc) but still completes the capture — on a GPU-equipped host the warning means the browser GPU path is misconfigured and worth fixing; on a GPU-less host the warning is informational and the captured media is still usable at reduced quality and speed.
+
 ## System Packages
 
 ```bash
